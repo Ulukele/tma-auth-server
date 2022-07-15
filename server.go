@@ -1,23 +1,35 @@
 package main
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"log"
 )
 
 type Server struct {
-	engine *DBEngine
+	signKey   *rsa.PrivateKey
+	verifyKey *rsa.PublicKey
+}
+
+func genKeys() (*rsa.PrivateKey, *rsa.PublicKey, error) {
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, nil, err
+	}
+	publicKey := &privateKey.PublicKey
+
+	return privateKey, publicKey, nil
 }
 
 func CreateServer() (*Server, error) {
-	engine, err := CreateEngine()
-	if err != nil {
+	s := &Server{}
+
+	var err error
+	if s.signKey, s.verifyKey, err = genKeys(); err != nil {
 		return nil, err
 	}
-
-	s := &Server{}
-	s.engine = engine
 	return s, nil
 }
 
@@ -29,76 +41,52 @@ type userInfoRequest struct {
 	Password string `json:"password" validate:"required"`
 }
 
-type sessionResponse struct {
-	SessionID string `json:"sessionID" validate:"required"`
+type AuthRequest struct {
+	JWT string `jon:"jwt" validate:"required"`
 }
 
-func (s *Server) HandleSignIn(c *fiber.Ctx) error {
+type JwtResponse struct {
+	JWT string `json:"jwt"`
+}
+
+func (s *Server) HandleAuthSignIn(c *fiber.Ctx) error {
 	log.Printf("handle sign in %s", c.Path())
 
-	userInfo := userInfoRequest{}
-	if err := c.BodyParser(&userInfo); err != nil {
+	var req userInfoRequest
+	if err := c.BodyParser(&req); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "expect username and password")
 	}
-	err := validate.Struct(userInfo)
-	if err != nil {
+	if err := validate.Struct(req); err != nil {
+		log.Printf(err.Error())
 		return fiber.NewError(fiber.StatusBadRequest, "validation error")
 	}
 
-	sessionID, err := s.engine.createSession(userInfo.Username, userInfo.Password)
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "wrong username or password")
-	}
+	info := UserInfo{Username: req.Username}
 
-	resp := sessionResponse{SessionID: sessionID}
-	return c.JSON(resp)
+	token, err := generateJWT(info, s.signKey)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "error while create jwt")
+	}
+	return c.JSON(JwtResponse{JWT: token})
 }
 
-func (s *Server) HandleSignOut(c *fiber.Ctx) error {
-	log.Printf("handle sign out %s", c.Path())
+func (s *Server) HandleAuthValidate(c *fiber.Ctx) error {
+	log.Printf("handle auth validate in %s", c.Path())
 
-	type userSignOutRequest struct {
-		Username  string `json:"username" validate:"required"`
-		SessionID string `json:"sessionID" validate:"required"`
+	var req AuthRequest
+	if err := c.BodyParser(&req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "expect jwt")
 	}
-	signOutRequest := userSignOutRequest{}
-	if err := c.BodyParser(&signOutRequest); err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "expect username and sessionID")
-	}
-	err := validate.Struct(signOutRequest)
-	if err != nil {
+	if err := validate.Struct(req); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "validation error")
 	}
 
-	if err := s.engine.removeSession(signOutRequest.Username, signOutRequest.SessionID); err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "wrong sessionID")
-	}
-
-	resp := sessionResponse{SessionID: signOutRequest.SessionID}
-	return c.JSON(resp)
-}
-
-func (s *Server) HandleSignUp(c *fiber.Ctx) error {
-	log.Printf("handle sign up %s", c.Path())
-
-	userInfo := userInfoRequest{}
-	if err := c.BodyParser(&userInfo); err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "expect username and password")
-	}
-	err := validate.Struct(userInfo)
+	user, err := ParseJWT(req.JWT, s.verifyKey)
 	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "validation error")
+		return fiber.NewError(fiber.StatusBadRequest, "error while validate jwt")
 	}
-
-	if err := s.engine.registerUser(userInfo.Username, userInfo.Password); err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "unable to register user")
+	if err = validate.Struct(user); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "error while validate jwt")
 	}
-
-	sessionID, err := s.engine.createSession(userInfo.Username, userInfo.Password)
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "wrong username or password")
-	}
-
-	resp := sessionResponse{SessionID: sessionID}
-	return c.JSON(resp)
+	return c.JSON(user)
 }

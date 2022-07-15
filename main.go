@@ -15,10 +15,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	userGroup := app.Group("/api/user/")
-	userGroup.Post("/sign-in/", server.HandleSignIn)
-	userGroup.Post("/sign-up/", server.HandleSignUp)
-	userGroup.Post("/sign-out/", server.HandleSignOut)
+	authGroup := app.Group("/api/auth/")
+	authGroup.Get("/sign-in/", server.HandleAuthSignIn)
+	authGroup.Get("/validate/", server.HandleAuthValidate)
 
 	log.Fatal(app.Listen(":8080"))
 }
