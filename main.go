@@ -16,8 +16,8 @@ func main() {
 	}
 
 	authGroup := app.Group("/api/auth/")
-	authGroup.Get("/sign-in/", server.HandleAuthSignIn)
-	authGroup.Get("/validate/", server.HandleAuthValidate)
+	authGroup.Post("/sign-in/", server.HandleAuthSignIn)
+	authGroup.Post("/validate/", server.HandleAuthValidate)
 
 	log.Fatal(app.Listen(":8080"))
 }
