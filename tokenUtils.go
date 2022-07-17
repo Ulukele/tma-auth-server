@@ -7,6 +7,7 @@ import (
 )
 
 type UserInfo struct {
+	Id       uint   `json:"id" validate:"required"`
 	Username string `json:"username" validate:"required"`
 }
 

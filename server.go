@@ -38,6 +38,7 @@ var validate = validator.New()
 
 type userInfoRequest struct {
 	Username string `json:"username" validate:"required"`
+	Id       uint   `json:"id" validate:"required"`
 	Password string `json:"password" validate:"required"`
 }
 
@@ -61,7 +62,7 @@ func (s *Server) HandleAuthSignIn(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "validation error")
 	}
 
-	info := UserInfo{Username: req.Username}
+	info := UserInfo{Username: req.Username, Id: req.Id}
 
 	token, err := generateJWT(info, s.signKey)
 	if err != nil {
