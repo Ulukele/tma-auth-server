@@ -8,6 +8,8 @@ RUN go mod download
 COPY *.go ./
 RUN go build -o /simple-auth-server
 
+ENV LISTEN_ON=$LISTEN_ON
+
 EXPOSE 8080
 
 CMD [ "/simple-auth-server" ]

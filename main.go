@@ -4,6 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"log"
+	"os"
 )
 
 func main() {
@@ -19,5 +20,5 @@ func main() {
 	authGroup.Post("/sign-in/", server.HandleAuthSignIn)
 	authGroup.Post("/validate/", server.HandleAuthValidate)
 
-	log.Fatal(app.Listen(":8080"))
+	log.Fatal(app.Listen(os.Getenv("LISTEN_ON")))
 }
