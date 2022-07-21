@@ -39,7 +39,6 @@ var validate = validator.New()
 type userInfoRequest struct {
 	Username string `json:"username" validate:"required"`
 	Id       uint   `json:"id" validate:"required"`
-	Password string `json:"password" validate:"required"`
 }
 
 type AuthRequest struct {
@@ -55,7 +54,7 @@ func (s *Server) HandleAuthSignIn(c *fiber.Ctx) error {
 
 	var req userInfoRequest
 	if err := c.BodyParser(&req); err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "expect username and password")
+		return fiber.NewError(fiber.StatusBadRequest, "expect username and id")
 	}
 	if err := validate.Struct(req); err != nil {
 		log.Printf(err.Error())

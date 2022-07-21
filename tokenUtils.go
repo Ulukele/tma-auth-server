@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/rsa"
+	"fmt"
 	"github.com/golang-jwt/jwt"
 	"time"
 )
@@ -26,6 +27,9 @@ func ParseJWT(tokenString string, verifyKey *rsa.PublicKey) (UserInfo, error) {
 		return UserInfo{}, nil
 	}
 
+	if !token.Valid {
+		return UserInfo{}, fmt.Errorf("invalid jwt")
+	}
 	claims := token.Claims.(*CustomClaims)
 
 	return claims.UserInfo, nil
