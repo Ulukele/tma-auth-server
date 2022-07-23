@@ -1,6 +1,7 @@
 package main
 
 type JwtResponse struct {
+	Id  uint   `json:"id"`
 	JWT string `json:"jwt"`
 }
 

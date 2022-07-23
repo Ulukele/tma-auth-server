@@ -107,7 +107,7 @@ func (s *Server) HandleAuthSignIn(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "error while create jwt")
 	}
-	return c.JSON(JwtResponse{JWT: token})
+	return c.JSON(JwtResponse{JWT: token, Id: user.Id})
 }
 
 func (s *Server) HandleAuthSignUp(c *fiber.Ctx) error {
@@ -141,7 +141,7 @@ func (s *Server) HandleAuthSignUp(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "error while create jwt")
 	}
-	return c.JSON(JwtResponse{JWT: token})
+	return c.JSON(JwtResponse{JWT: token, Id: user.Id})
 }
 
 func (s *Server) HandleAuthValidate(c *fiber.Ctx) error {
