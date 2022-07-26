@@ -105,3 +105,55 @@ func (dbe *DBEngine) GetUserByUsername(username string) (*UserModel, error) {
 
 	return user, nil
 }
+
+func (dbe *DBEngine) UpdateRefreshToken(userId uint, refreshToken string) error {
+	user, err := dbe.GetUserById(userId)
+	if err != nil {
+		return err
+	}
+	if err := dbe.DB.Model(&user).Update("refresh_token", refreshToken).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (dbe *DBEngine) UpdateTelegramUsername(userId uint, telegramUsername string) error {
+	user, err := dbe.GetUserById(userId)
+	if err != nil {
+		return err
+	}
+
+	return dbe.DB.Model(&user).Update("telegram_username", telegramUsername).Error
+}
+
+func (dbe *DBEngine) DeleteTelegramRef(userId uint) error {
+	user, err := dbe.GetUserById(userId)
+	if err != nil {
+		return err
+	}
+
+	err = dbe.DB.Transaction(func(tx *gorm.DB) error {
+
+		if err := dbe.DB.Model(&user).Update("telegram_username", "").Error; err != nil {
+			return err
+		}
+		if err := dbe.DB.Model(&user).Update("telegram_id", "").Error; err != nil {
+			return err
+		}
+		return nil
+	})
+
+	return err
+}
+
+func (dbe *DBEngine) UpdateTelegramUserId(userId uint, telegramUsername string, telegramId string) error {
+	user, err := dbe.GetUserById(userId)
+	if err != nil {
+		return err
+	}
+	if user.TelegramUsername == "" || user.TelegramUsername != telegramUsername {
+		return fmt.Errorf("specify telegram username on app")
+	}
+
+	return dbe.DB.Model(&user).Update("telegram_id", telegramId).Error
+}

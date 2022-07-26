@@ -4,9 +4,12 @@ import "gorm.io/gorm"
 
 type UserModel struct {
 	gorm.Model
-	Id       uint `gorm:"primaryKey"`
-	Username string
-	Password string
+	Id               uint `gorm:"primaryKey"`
+	Username         string
+	Password         string
+	RefreshToken     string
+	TelegramUsername string
+	TelegramId       string
 }
 
 func (dbe *DBEngine) initTables() error {

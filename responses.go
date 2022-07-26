@@ -1,8 +1,9 @@
 package main
 
 type JwtResponse struct {
-	Id  uint   `json:"id"`
-	JWT string `json:"jwt"`
+	Id           uint   `json:"id"`
+	JWT          string `json:"jwt"`
+	RefreshToken string `json:"refreshToken"`
 }
 
 type UserResponse struct {
