@@ -10,3 +10,8 @@ type UserResponse struct {
 	Id       uint   `json:"id"`
 	Username string `json:"username"`
 }
+
+type SingleJwtResponse struct {
+	Id  uint   `json:"id"`
+	JWT string `json:"jwt"`
+}

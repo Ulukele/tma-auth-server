@@ -5,29 +5,25 @@ type userAuthRequest struct {
 	Password string `json:"password" validate:"required"`
 }
 
+type serviceAuthRequest struct {
+	Name      string `json:"name" validate:"required"`
+	SecretKey string `json:"secretKey" validate:"required"`
+}
+
+type serviceUserRequest struct {
+	JWT             string `json:"jwt" validate:"required"`
+	ServiceUsername string `json:"serviceUsername" validate:"required"`
+	UserId          uint   `json:"userId" validate:"required"`
+}
+
 type userGetRequest struct {
 	Id uint `json:"id" validate:"required"`
 }
 
 type AuthRequest struct {
-	JWT string `jon:"jwt" validate:"required"`
+	JWT string `json:"jwt" validate:"required"`
 }
 
 type RefreshRequest struct {
 	RefreshToken string `json:"refreshToken" validate:"required"`
-}
-
-type UpdateTelegramUsername struct {
-	UserId           uint   `json:"userId" validate:"required"`
-	TelegramUsername string `json:"telegramUsername" validate:"required"`
-}
-
-type DeleteTelegramUsername struct {
-	UserId uint `json:"userId" validate:"required"`
-}
-
-type UpdateTelegramId struct {
-	UserId           uint   `json:"userId" validate:"required"`
-	TelegramUsername string `json:"telegramUsername" validate:"required"`
-	TelegramId       string `json:"telegramId" validate:"required"`
 }

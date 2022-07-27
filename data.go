@@ -52,6 +52,14 @@ func (dbe *DBEngine) CreateUser(username string, password string) (*UserModel, e
 	return user, nil
 }
 
+func (dbe *DBEngine) CreateService(name string, secretKey string) (*ServiceModel, error) {
+	service := &ServiceModel{Name: name, SecretKey: secretKey}
+	if err := dbe.DB.Create(service).Error; err != nil {
+		return nil, err
+	}
+	return service, nil
+}
+
 func (dbe *DBEngine) CheckUser(username string, password string) (bool, error) {
 	user := &UserModel{}
 	var exists bool
@@ -59,6 +67,21 @@ func (dbe *DBEngine) CheckUser(username string, password string) (bool, error) {
 		Model(&user).
 		Select("count(*) > 0").
 		Where("username = ? AND password = ?", username, password).
+		Find(&exists).
+		Error; err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}
+
+func (dbe *DBEngine) CheckService(name string, secretKey string) (bool, error) {
+	service := &ServiceModel{}
+	var exists bool
+	if err := dbe.DB.
+		Model(&service).
+		Select("count(*) > 0").
+		Where("name = ? AND secret_key = ?", name, secretKey).
 		Find(&exists).
 		Error; err != nil {
 		return false, err
@@ -82,6 +105,21 @@ func (dbe *DBEngine) CheckUserByUsername(username string) (bool, error) {
 	return exists, nil
 }
 
+func (dbe *DBEngine) CheckServiceByName(name string) (bool, error) {
+	service := &ServiceModel{}
+	var exists bool
+	if err := dbe.DB.
+		Model(&service).
+		Select("count(*) > 0").
+		Where("name = ?", name).
+		Find(&exists).
+		Error; err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}
+
 func (dbe *DBEngine) GetUserById(userId uint) (*UserModel, error) {
 	user := &UserModel{}
 	if err := dbe.DB.
@@ -92,6 +130,18 @@ func (dbe *DBEngine) GetUserById(userId uint) (*UserModel, error) {
 	}
 
 	return user, nil
+}
+
+func (dbe *DBEngine) GetServiceById(serviceId uint) (*ServiceModel, error) {
+	service := &ServiceModel{}
+	if err := dbe.DB.
+		Where("Id = ?", serviceId).
+		Take(&service).
+		Error; err != nil {
+		return nil, err
+	}
+
+	return service, nil
 }
 
 func (dbe *DBEngine) GetUserByUsername(username string) (*UserModel, error) {
@@ -106,6 +156,18 @@ func (dbe *DBEngine) GetUserByUsername(username string) (*UserModel, error) {
 	return user, nil
 }
 
+func (dbe *DBEngine) GetServiceByName(name string) (*ServiceModel, error) {
+	service := &ServiceModel{}
+	if err := dbe.DB.
+		Where("name = ?", name).
+		Take(&service).
+		Error; err != nil {
+		return nil, err
+	}
+
+	return service, nil
+}
+
 func (dbe *DBEngine) UpdateRefreshToken(userId uint, refreshToken string) error {
 	user, err := dbe.GetUserById(userId)
 	if err != nil {
@@ -117,43 +179,28 @@ func (dbe *DBEngine) UpdateRefreshToken(userId uint, refreshToken string) error 
 	return nil
 }
 
-func (dbe *DBEngine) UpdateTelegramUsername(userId uint, telegramUsername string) error {
-	user, err := dbe.GetUserById(userId)
+func (dbe *DBEngine) UpdateServiceRefreshToken(serviceId uint, refreshToken string) error {
+	service, err := dbe.GetServiceById(serviceId)
 	if err != nil {
 		return err
 	}
-
-	return dbe.DB.Model(&user).Update("telegram_username", telegramUsername).Error
+	if err := dbe.DB.Model(&service).Update("refresh_token", refreshToken).Error; err != nil {
+		return err
+	}
+	return nil
 }
 
-func (dbe *DBEngine) DeleteTelegramRef(userId uint) error {
-	user, err := dbe.GetUserById(userId)
-	if err != nil {
-		return err
+func (dbe *DBEngine) CheckUserInService(userId uint, serviceUsername string, serviceId uint) (bool, error) {
+	relation := &UserServiceRelation{}
+	var exists bool
+	if err := dbe.DB.
+		Model(&relation).
+		Select("count(*) > 0").
+		Where("user_id = ? AND service_username = ? AND service_id = ?", userId, serviceUsername, serviceId).
+		Find(&exists).
+		Error; err != nil {
+		return false, err
 	}
 
-	err = dbe.DB.Transaction(func(tx *gorm.DB) error {
-
-		if err := dbe.DB.Model(&user).Update("telegram_username", "").Error; err != nil {
-			return err
-		}
-		if err := dbe.DB.Model(&user).Update("telegram_id", "").Error; err != nil {
-			return err
-		}
-		return nil
-	})
-
-	return err
-}
-
-func (dbe *DBEngine) UpdateTelegramUserId(userId uint, telegramUsername string, telegramId string) error {
-	user, err := dbe.GetUserById(userId)
-	if err != nil {
-		return err
-	}
-	if user.TelegramUsername == "" || user.TelegramUsername != telegramUsername {
-		return fmt.Errorf("specify telegram username on app")
-	}
-
-	return dbe.DB.Model(&user).Update("telegram_id", telegramId).Error
+	return exists, nil
 }
